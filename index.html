@@ -42,7 +42,7 @@
                 var: "Porcona"
             },
             methods: {
-                goToLogin: (comp, ev) => {
+                goToLogin: (ev) => {
                     console.log("Go To Login Triggered");
                     sj.setContentFromPath('/login');
             
@@ -62,16 +62,18 @@
                 text: "Miscredente"
             },
             methods: {
-                changeTitle: (comp, ev) => {
-                    console.log("comp", comp);
-                    comp.props.title = "Ciccia Al Pelo"
+                changeTitle: function(ev) {
+                    console.log("comp", this);
+                    this.props.title = "Ciccia Al Pelo"
                 }
             },
             template: "<h1>{{title}}</h1><h2>Fai il Login, {{text}} !</h2><button id='magicButton' sj-event={click,changeTitle}>Cliccami !</button>",
-            render: (comp) => {
+            render: function() {
                 console.log("LoginComponent render()");
 
-                // comp.props.title = "BOMBA !";
+                console.log(this);
+
+                this.props.title = "BOMBA !";
             }
         });
 

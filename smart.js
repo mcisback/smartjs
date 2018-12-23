@@ -171,7 +171,9 @@ SJ.Component = class {
 		this.methods = bootstrapObject.methods;
 		this.template = bootstrapObject.template;
 		this.templateCopy = bootstrapObject.template;
-		this.userRender = bootstrapObject.render;
+		this.userRender = bootstrapObject.render.bind(this);
+
+		//this.userRender = this._userRender.bind(this);
 
 		this.props = new SJ.Props({});
 
@@ -229,7 +231,9 @@ SJ.Component = class {
 
 	render() {
 
-		this.userRender(this);
+		SJ.log("render() this: ", this);
+
+		this.userRender();
 
 		this.matchVars();
 
@@ -323,7 +327,8 @@ SJ.Component = class {
 
 				return function (e) {
 					SJ.log("Called eventHandler ! Calling object: ", e.target);
-					method(comp, e);
+					let m = method.bind(comp);
+					m(e);
 				}
 
 			})(this, method);
