@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Custom JS Framework App</title>
+
+    <script src="smart.js"></script>
+
+    <style>
+        #appHook {
+            display: flex;
+            flex-direction: row;
+            flex-flow: nowrap;
+            justify-content: center;
+        }
+
+        #appHook > button {
+            display: flex;
+            margin: 2%;
+        }
+
+        body > h1 {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    
+    <h1>My Custom JS Framework App</h1>
+
+    <div id="appHook"></div>
+
+    <script type="text/javascript">
+
+        /* document.addEventListener("click", evnt => {
+            console.log("Clicked ! -> ", evnt.target);
+        }); */
+
+        var HomeComponent = new SJ.Component({
+            name: "Home",
+            props: {
+                var: "Porcona"
+            },
+            methods: {
+                goToLogin: (comp, ev) => {
+                    console.log("Go To Login Triggered");
+                    sj.setContentFromPath('/login');
+            
+                    return false;
+                }
+            },
+            template: "<h1>Ciao Bella {{var}}</h1><button id='magicButton' sj-event={click,goToLogin}>Login</button>",
+            render: () => {
+                console.log("HomeComponent render()");
+            }
+        });
+
+        var LoginComponent = new SJ.Component({
+            name: "Login",
+            props: {
+                title: "Ecco Il Login",
+                text: "Miscredente"
+            },
+            methods: {
+                changeTitle: (comp, ev) => {
+                    console.log("comp", comp);
+                    comp.props.title = "Ciccia Al Pelo"
+                }
+            },
+            template: "<h1>{{title}}</h1><h2>Fai il Login, {{text}} !</h2><button id='magicButton' sj-event={click,changeTitle}>Cliccami !</button>",
+            render: (comp) => {
+                console.log("LoginComponent render()");
+
+                // comp.props.title = "BOMBA !";
+            }
+        });
+
+        var sj = new SJ.App({
+            rootElement: "appHook",
+            router: new SJ.Router({
+                routes: new Map([
+                    ["index", {
+                        path: "/",
+                        component: HomeComponent
+                    }],
+                    ["/login", {
+                        path: "/login",
+                        component: LoginComponent
+                    }]
+                ])
+            })
+        });
+
+        function goToLogin() {
+            sj.setContentFromPath('/login');
+            
+            return false;
+        }
+
+    </script>
+
+</body>
+</html>
