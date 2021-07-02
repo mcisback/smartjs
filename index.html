@@ -5,6 +5,10 @@
     <title>My Custom JS Framework App</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+    />
 
     <style>
         #appHook {
@@ -26,6 +30,10 @@
         body > h1 {
             text-align: center;
         }
+
+        [sj-cloak] {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -39,7 +47,7 @@
     <template HomeComponent>
         <h1>{{title}}</h1>
         <h2>Fai il Login {{text}} ?</h2>
-        <button id='magicButton1' sj:click='goToLogin' class="btn btn-primary">Vai Al Login {{text}} !</button>
+        <button id='magicButton1' sj-click='goToLogin' class="btn btn-primary">Vai Al Login {{text}} !</button>
     </template>
 
     <script>
@@ -71,43 +79,51 @@
     </script>
 
     <template LoginComponent>
-        <h1>{{ title }}</h1>
-        <h2>Fai il Login {{ text }} !</h2>
+        <div sj-cloak>
+            <h1>{{ title }}</h1>
+            <h2>Fai il Login {{ text }} !</h2>
 
-        <div sj:if="showDiv">
-            Your username is {{ login }}
-            <br>
-            And Your Password is {{ password }}
+            <div sj:if="this.showDiv" sj:if-class="{ 'animate__animated animate__fadeIn animate__fast': this.showDiv }">
+                Your username is {{ login }}
+                <br>
+                And Your Password is {{ password }}
+            </div>
+
+            <div sj:if-class="{ 'hide': !this.showDiv, 'animate__animated animate__fadeIn animate__fast': this.showDiv }">
+                IfClass Toggled ! Ciccio Baliccio
+            </div>
+
+            <form sj:submit="submit">
+
+                <div class="form-group row">
+                    <input type="text" sj:model="login" name="login" id="login" placeholder="Login" class="form-control mb-4">
+                </div>
+
+                <div class="form-group row">
+                    <input type="password" sj:model="password" name="password" id="password" placeholder="Password" class="form-control mb-4">
+                </div>
+
+                <div class="form-group row">
+                    <select name="city" sj:for="city of cities">
+                        <option value="{{ city.id }}">{{ city.city }}</option>
+                    </select>
+                </div>
+
+                <div class="form-group row">
+                    <button type="submit" class="btn btn-primary btn-block mb-4">Login !</button>
+                </div>
+
+            </form>
+
+            <button id='magicButton2' sj:click='changeTitle' class="btn btn-primary">Cambia Il Titolo !</button>
+
+            <button id='magicButton3' sj:click='toggleDiv' class="btn btn-primary">Toggle Div !</button>
+
+            <button id='magicButton4' sj:click='updateLoginPsw' class="btn btn-primary">Update Login And Password !</button>
+            <p sj:if-class="{ 'hide': (this.login === '') }">
+                Login: {{ login }}
+            </p>
         </div>
-
-        <div sj:if-class="{ 'hide': !this.showDiv }">
-            IfClass Toggled ! Ciccio Baliccio
-        </div>
-
-        <form sj:submit="submit">
-
-            <div class="form-group row">
-                <input type="text" sj:model="login" name="login" id="login" placeholder="Login" class="form-control mb-4">
-            </div>
-
-            <div class="form-group row">
-                <input type="text" sj:model="password" name="password" id="password" placeholder="Password" class="form-control mb-4">
-            </div>
-
-            <div class="form-group row">
-                <button type="submit" class="btn btn-primary btn-block mb-4">Login !</button>
-            </div>
-
-        </form>
-
-        <button id='magicButton2' sj:click='changeTitle' class="btn btn-primary">Cambia Il Titolo !</button>
-
-        <button id='magicButton3' sj:click='toggleDiv' class="btn btn-primary">Toggle Div !</button>
-
-        <button id='magicButton4' sj:click='updateLoginPsw' class="btn btn-primary">Update Login And Password !</button>
-        <p>
-            Login: {{ login }}
-        </p>
     </template>
 
     <script type="text/javascript">
@@ -118,8 +134,8 @@
                 title: "Ecco Il Login",
                 text: "Marta",
                 showDiv: false,
-                login: 'rads',
-                password: 'dasda',
+                login: '',
+                password: '',
             },
             methods: {
                 changeTitle: function(ev) {

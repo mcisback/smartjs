@@ -6,7 +6,9 @@ export default class IfDirective {
         log('$el.tagName: ', $el.tagName)
         log('IfDirective vars: ', { event, args }, $scope)
 
-        if($scope.props[args]) {
+        const exprResult = (new Function(` return ${args}`).bind($scope.props))();
+
+        if(exprResult) {
             $el.style.display = 'block';
         } else {
             $el.style.display = 'none';

@@ -163,7 +163,7 @@ export default class Component {
 
         // log("SJ.Component.matchMethod, this.templateCopy: ", this.templateCopy);
 
-        this.templateCopy = this.templateOriginal;
+        // this.templateCopy = this.templateOriginal;
 
         const eventNodes = Helper.attrStartsWith('sj:', this.$el)
 
@@ -172,6 +172,10 @@ export default class Component {
         for(let i = 0; i < eventNodes.length; i++) {
 
             const node = eventNodes[i];
+
+            /*if(node.el.hasAttribute('sj-cloak')) {
+                continue;
+            }*/
 
             AttributesDispatcher.dispatch(node, this)
         }
@@ -185,33 +189,48 @@ export default class Component {
         // log("SJ.Component.matchVars, this.templateCopy: ", this.templateCopy);
 
         if(this.count === 0) {
-            this.$el.querySelectorAll('*').forEach(($child, key) => {
-                // do {
-                    let lines = $child.innerHTML.split('\n');
+            const $children = this.$el.querySelectorAll('*');
 
-                    for(let i = 0; i < lines.length; i++) {
-                        var m = reg.exec(lines[i]);
+            for(let i = 0; i < $children.length; i++) {
+                const $child = $children[i];
 
-                        if (m) {
-                            const prop = m[1].replace(/\s*/g, '')
+                // log('wrapVars $child: ', $child)
+                // log('wrapVars $child.parentElement: ', $child.parentElement)
 
-                            log("QUIIIIIIIIIII Matched " + m[0] + ": ", m, "On Element $child: ", $child);
+                if($child.hasAttribute('sj:for')) {
+                    log('wrapVars $child has attribute "sj:for"', $child.tagName)
+                    continue;
+                } else if($child.parentElement && $child.parentElement.hasAttribute('sj:for')) {
+                    log('wrapVars $child.parentElement has attribute "sj:for"', $child.tagName, $child.parentElement.tagName)
 
-                            const childId = "sj-var-" + Helper.uuid4()
+                    continue;
+                }
 
-                            $child.innerHTML = $child.innerHTML.replace(m[0], `<div id="${childId}" style="display: inline;">${m[0]}</div>`);
+                let lines = $child.innerHTML.split('\n');
 
-                            if(this.wrappedVarsMap.has(prop)) {
-                                this.wrappedVarsMap.get(prop).push(childId);
-                            } else {
-                                this.wrappedVarsMap.set(prop, [childId]);
-                            }
+                for (let i = 0; i < lines.length; i++) {
+                    var m = reg.exec(lines[i]);
 
-                            log('$child.innerHTML: ', $child.innerHTML);
+                    if (m) {
+                        const prop = m[1].replace(/\s*/g, '')
+
+                        log("wrapVars Matched " + m[0] + ": ", m, "On Element $child: ", $child);
+
+                        const childId = "sj-var-" + Helper.uuid4()
+
+                        $child.innerHTML = $child.innerHTML.replace(m[0], `<div id="${childId}" style="display: inline;">${m[0]}</div>`);
+
+                        if (this.wrappedVarsMap.has(prop)) {
+                            this.wrappedVarsMap.get(prop).push(childId);
+                        } else {
+                            this.wrappedVarsMap.set(prop, [childId]);
                         }
+
+                        log('wrapVars $child.innerHTML: ', $child.innerHTML);
                     }
-                // } while(m)
-            })
+                }
+
+            }
 
             this.templateOriginal = this.$el.innerHTML;
         }
@@ -223,19 +242,16 @@ export default class Component {
         document.addEventListener('DOMContentLoaded', (event) => {
             console.log('DOM fully loaded and parsed');
 
-            for (const [prop, childId] of this.wrappedVarsMap.entries()) {
-                childId.forEach(id => {
-                    const $child = this.$el.querySelector(`#${id}`);
+            setTimeout(() =>{
+                this.render()
 
-                    // if($child) {
-                        if(this.props.hasOwnProperty(prop)) {
-                            log(`DOMContentLoaded Setting ${prop} on ${childId} to ${this.props[prop]}`);
+                const cloakEl = this.$el.querySelector('[sj-cloak]');
 
-                            $child.innerHTML = this.props[prop];
-                        }
-                    // }
-                })
-            }
+                if(cloakEl && cloakEl.hasAttribute('sj-cloak')) {
+                    cloakEl.removeAttribute('sj-cloak')
+                }
+            }, 1000)
+
         });
 
         this.listenToPropChanges();
@@ -250,7 +266,7 @@ export default class Component {
                 component.wrappedVarsMap.get(prop).forEach(id => {
                     log(`Setting ${prop} on ${id} to ${newValue}`);
 
-                    const $child = document.getElementById(id);
+                    const $child = component.$el.querySelector(`#${id}`);
 
                     if ($child) {
                         $child.innerHTML = newValue;

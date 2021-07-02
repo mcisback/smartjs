@@ -25,7 +25,7 @@ export default class BindModel {
 
                 BrowserEvent.attachEvent($el, 'input', function(ev) {
                     $scope.props[args] = ev.target.value;
-                }, 'setPropToInputValue')
+                }, 'setPropToInputValue');
             }
         }
     }

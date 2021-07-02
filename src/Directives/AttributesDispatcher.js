@@ -5,6 +5,7 @@ import IfDirective from "./IfDirective";
 import log from "../Log";
 import IfClassDirective from "./IfClassDirective";
 import BindModel from "./BindModel";
+import ForDirective from "./ForDirective";
 
 import Helper from '../Helper';
 
@@ -52,6 +53,10 @@ export default class AttributesDispatcher {
                     break;
                 }
                 case 'for': {
+                    new ForDirective({event: trigger, args: triggerArgs}, $scope, $el);
+                    break;
+                }
+                case 'cloak': {
                     console.error(`Directive ${trigger} Unimplemented`)
                     break;
                 }
