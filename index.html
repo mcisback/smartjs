@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>My Custom JS Framework App</title>
 
-    <script src="smart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
 
     <style>
         #appHook {
@@ -19,6 +19,10 @@
             margin: 2%;
         }
 
+        .hide {
+            display: none;
+        }
+
         body > h1 {
             text-align: center;
         }
@@ -30,74 +34,136 @@
 
     <div id="appHook"></div>
 
-    <script type="text/javascript">
+    <script src="/dist/smart.js"></script>
 
-        /* document.addEventListener("click", evnt => {
-            console.log("Clicked ! -> ", evnt.target);
-        }); */
+    <template HomeComponent>
+        <h1>{{title}}</h1>
+        <h2>Fai il Login {{text}} ?</h2>
+        <button id='magicButton1' sj:click='goToLogin' class="btn btn-primary">Vai Al Login {{text}} !</button>
+    </template>
 
-        var HomeComponent = new SJ.Component({
+    <script>
+        const HomeComponent = new SJ.Component({
             name: "Home",
             props: {
-                var: "Porcona"
+                title: "Welcome Home",
+                text: 'Marta'
             },
             methods: {
                 goToLogin: (ev) => {
+                    ev.preventDefault();
+
                     console.log("Go To Login Triggered");
-                    sj.setContentFromPath('/login');
-            
-                    return false;
+
+                    this.$router.goTo('/login');
+                },
+                helloworld: (ev) => {
+                    ev.preventDefault();
+
+                    alert("Hello World !");
                 }
             },
-            template: "<h1>Ciao Bella {{var}}</h1><button id='magicButton' sj-event={click,goToLogin}>Login</button>",
+            template: document.querySelector('[HomeComponent]'),
             render: () => {
                 console.log("HomeComponent render()");
             }
         });
+    </script>
 
-        var LoginComponent = new SJ.Component({
+    <template LoginComponent>
+        <h1>{{ title }}</h1>
+        <h2>Fai il Login {{ text }} !</h2>
+
+        <div sj:if="showDiv">
+            Your username is {{ login }}
+            <br>
+            And Your Password is {{ password }}
+        </div>
+
+        <div sj:if-class="{ 'hide': !this.showDiv }">
+            IfClass Toggled ! Ciccio Baliccio
+        </div>
+
+        <form sj:submit="submit">
+
+            <div class="form-group row">
+                <input type="text" sj:model="login" name="login" id="login" placeholder="Login" class="form-control mb-4">
+            </div>
+
+            <div class="form-group row">
+                <input type="text" sj:model="password" name="password" id="password" placeholder="Password" class="form-control mb-4">
+            </div>
+
+            <div class="form-group row">
+                <button type="submit" class="btn btn-primary btn-block mb-4">Login !</button>
+            </div>
+
+        </form>
+
+        <button id='magicButton2' sj:click='changeTitle' class="btn btn-primary">Cambia Il Titolo !</button>
+
+        <button id='magicButton3' sj:click='toggleDiv' class="btn btn-primary">Toggle Div !</button>
+
+        <button id='magicButton4' sj:click='updateLoginPsw' class="btn btn-primary">Update Login And Password !</button>
+        <p>
+            Login: {{ login }}
+        </p>
+    </template>
+
+    <script type="text/javascript">
+
+        const LoginComponent = new SJ.Component({
             name: "Login",
             props: {
                 title: "Ecco Il Login",
-                text: "Miscredente"
+                text: "Marta",
+                showDiv: false,
+                login: 'rads',
+                password: 'dasda',
             },
             methods: {
                 changeTitle: function(ev) {
-                    console.log("comp", this);
+                    console.log("comp", this.name);
                     this.props.title = "Ciccia Al Pelo"
+                },
+                toggleDiv: function (ev) {
+                    this.props.showDiv = !this.props.showDiv
+
+                    console.log('Toggling Div: ', this.props.showDiv)
+                },
+                submit: function (ev) {
+                    alert("Te Piacerebbe !")
+                },
+                updateLoginPsw: function (ev) {
+                    this.props.login = 'AJO !'
+                    this.props.password = 'EHIAHAIAIAI'
                 }
             },
-            template: "<h1>{{title}}</h1><h2>Fai il Login, {{text}} !</h2><button id='magicButton' sj-event={click,changeTitle}>Cliccami !</button>",
+            template: document.querySelector('[LoginComponent]'),
             render: function() {
-                console.log("LoginComponent render()");
+                console.log("LoginComponent userRender()");
 
-                console.log(this);
+                // console.log(this);
 
-                this.props.title = "BOMBA !";
+                // this.props.title = "BOMBA !";
             }
         });
 
-        var sj = new SJ.App({
-            rootElement: "appHook",
+        new SJ.App({
+            rootElement: '#appHook',
             router: new SJ.Router({
                 routes: new Map([
+                    /*["home", {
+                        path: "/home",
+                        component: HomeComponent
+                    }],*/
                     ["index", {
                         path: "/",
-                        component: HomeComponent
-                    }],
-                    ["/login", {
-                        path: "/login",
                         component: LoginComponent
                     }]
                 ])
             })
         });
-
-        function goToLogin() {
-            sj.setContentFromPath('/login');
-            
-            return false;
-        }
 
     </script>
 

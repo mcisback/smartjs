@@ -1,0 +1,35 @@
+{
+  "name": "smartjs",
+  "version": "1.0.0",
+  "description": "This is a simple VueJS style framework i made to understand key concept of VueJS/React/Angular frameworks and also for fun !",
+  "main": "src/Index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack ./src/Index.js --output-filename=smart.js --mode=development",
+    "watch": "watch 'npm run build' ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mcisback/smartjs.git"
+  },
+  "keywords": [
+    "js",
+    "framework",
+    "vuejs"
+  ],
+  "author": "Marco Caggiano",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mcisback/smartjs/issues"
+  },
+  "homepage": "https://github.com/mcisback/smartjs#readme",
+  "devDependencies": {
+    "watch": "^1.0.2",
+    "webpack": "^5.41.1",
+    "webpack-cli": "^4.7.2"
+  },
+  "dependencies": {
+    "diff-dom": "^4.2.2",
+    "md5": "^2.3.0"
+  }
+}
