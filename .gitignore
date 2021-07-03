@@ -8,6 +8,12 @@ yarn-error.log*
 # Webstorm
 .idea
 
+# Webpack
+dist
+
+favicon.ico
+package-lock.json
+
 # Runtime data
 pids
 *.pid

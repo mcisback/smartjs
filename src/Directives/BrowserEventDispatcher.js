@@ -23,7 +23,7 @@ export default class BrowserEventDispatcher {
                 log(`${methodName} is an arrow function !`)
             }
 
-            log("--- addEventListener ---");
+            log("---- addEventListener ----");
             log(`${event} -> ${methodName}`)
 
             eventHandler = (function (comp, method) {
