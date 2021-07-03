@@ -1,7 +1,7 @@
 import Router from "./Router";
 
 import Helper from "./Helper.js";
-import log from "./Log";
+import ComponentsRegister from "./ComponentsRegister";
 
 export default class App {
 
@@ -20,6 +20,10 @@ export default class App {
         } else if(typeof opts.rootElement === 'function') {
             this.$root = rootElement()
         }
+
+        this.components = opts.components || [];
+
+        ComponentsRegister.registerComponentsFromArray(this.components)
 
         if(opts.router && typeof opts.router === 'object' && opts.router instanceof Router) {
             this.$router = opts.router;

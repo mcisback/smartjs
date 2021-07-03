@@ -5,8 +5,7 @@ import log from "./Log";
 import AttributesDispatcher from "./Directives/AttributesDispatcher";
 import Router from "./Router";
 
-import { DiffDOM } from "diff-dom";
-import md5 from "md5"
+import ComponentsRegister from "./ComponentsRegister";
 
 export default class Component {
 
@@ -19,7 +18,7 @@ export default class Component {
         }
 
         this.$el = document.createElement("div");
-        this.id = "sj-div-" + Helper.uuid4()
+        this.id = "sj-comp-" + Helper.uuid4()
 
         this.$el.setAttribute("id", this.id);
         this.$el.style.border = "0";
@@ -27,6 +26,7 @@ export default class Component {
         this.$el.style.padding = "0";
 
         this.wrappedVarsMap = new Map();
+        this.childComponentsMap = new Map();
 
         this.name = opts.name;
         this.props = new PropsProxy(opts.props, this, this.render.bind(this));
@@ -44,17 +44,34 @@ export default class Component {
             throw new Error('Unsupported template type')
         }
 
-        this.templateCopy = this.templateOriginal;
-        this.prevTemplate = this.templateCopy;
+        ComponentsRegister.registerComponent(this);
+
+        this.$el.innerHTML = this.templateOriginal;
+
+        // this.templateCopy = this.templateOriginal;
+        // this.prevTemplate = this.templateCopy;
         this.userRender = opts.render.bind(this);
 
         // this.dd = new DiffDOM();
 
-        this.$el.innerHTML = this.templateCopy;
+        // this.$el.innerHTML = this.templateCopy;
+
+        this.childComponents = opts.childComponents || [];
+
+        ComponentsRegister.registerComponentsFromArray(this.childComponents)
 
         this.wrapVars()
 
         // this.startObserver()
+    }
+
+    getName() {
+        return this.name.toLowerCase();
+    }
+
+    isRenderable() {
+        log(`${this.name}: this.$el.parentElement: `, this.$el.parentElement)
+        return typeof this.$el.parentElement === 'object' && this.$el.parentElement instanceof HTMLElement;
     }
 
     setRouter(router) {
@@ -63,7 +80,8 @@ export default class Component {
         }
     }
 
-    startObserver() {
+
+    /*startObserver() {
         console.log('Starting To Observe...')
 
         const targetNode = this.$el;
@@ -75,29 +93,29 @@ export default class Component {
         }
 
         const observer = new MutationObserver((mutations) => {
-            /*if (this.pauseMutationObserver) return;*/
+            /!*if (this.pauseMutationObserver) return;*!/
 
             for (let i=0; i < mutations.length; i++){
                 if (mutations[i].addedNodes.length > 0) {
                     mutations[i].addedNodes.forEach(node => {
-                        // Discard non-element nodes/*if(node.parentElement.hasAttribute('xcomp')) {
+                        // Discard non-element nodes/!*if(node.parentElement.hasAttribute('xcomp')) {
 
                         if (node.nodeType !== 1) return
 
                         console.log('Found node: ', node, "\n\nParent: ", node.parentElement)
                         console.log('Mutuation: ', mutations[i])
 
-                        /*if(node.parentElement.hasAttribute('xcomp')) {
+                        /!*if(node.parentElement.hasAttribute('xcomp')) {
                             this.initComp(node.parentElement, true)
-                        }*/
+                        }*!/
 
                         // Discard any changes happening within an existing component.
                         // They will take care of themselves.
                         // if (node.parentElement && node.parentElement.closest('[xcomp]')) return
 
-                        /*this.discoverUninitializedComponents((el) => {
+                        /!*this.discoverUninitializedComponents((el) => {
                             this.initializeComponent(el)
-                        }, node.parentElement)*/
+                        }, node.parentElement)*!/
 
                         // this.initComp(node.parentElement)
                     })
@@ -107,50 +125,25 @@ export default class Component {
 
         observer.observe(targetNode, observerOptions)
     }
+*/
 
-    render() {
+    render(forceRendering=false) {
+
+        if(!this.isRenderable() && !forceRendering) {
+            log(`Component ${this.name} is not renderable, skipping render`)
+
+            return;
+        }
 
         log('-------------- CALLED RENDER --------------')
-
-        // log("render() this: ", this);
 
         this.userRender();
 
         this.matchWrappedVars();
 
-        log('HASH this.prevTemplate: ', this.prevTemplate)
-
-        const prevHash = md5(this.prevTemplate);
-        const currentHash = md5(this.templateCopy);
-
-        // let diff = this.dd.diff(this.prevTemplate, this.templateCopy);
-
-        // log('DiffDOM diff: ', diff)
-        // log('DiffDOM result: ', result)
-
-        log(`prevHash: ${prevHash}`);
-        log(`currentHash: ${currentHash}`);
-
-        if(this.count === 0) {
-            this.$el.innerHTML = this.templateCopy;
-            this.prevTemplate = this.templateCopy
-
-            this.count++;
-
-        }
-
-        if(currentHash !== prevHash && this.count > 0) {
-            log('HASH Templates DIFFER !')
-            log('HASH this.templateCopy: ', this.templateCopy)
-
-            this.$el.innerHTML = this.templateCopy;
-
-            this.count++;
-        } else {
-            log('Templates ARE IDENTICAL !')
-        }
-
         this.matchMethods();
+
+        this.renderChildComponents();
 
     }
 
@@ -158,12 +151,11 @@ export default class Component {
         return this.$el
     }
 
+    getHtml() {
+        return this.$el.innerHTML;
+    }
+
     matchMethods() {
-        // const reg = /\@[^\=]+={[^}]+\}/gi;
-
-        // log("SJ.Component.matchMethod, this.templateCopy: ", this.templateCopy);
-
-        // this.templateCopy = this.templateOriginal;
 
         const eventNodes = Helper.attrStartsWith('sj:', this.$el)
 
@@ -173,10 +165,6 @@ export default class Component {
 
             const node = eventNodes[i];
 
-            /*if(node.el.hasAttribute('sj-cloak')) {
-                continue;
-            }*/
-
             AttributesDispatcher.dispatch(node, this)
         }
 
@@ -184,9 +172,6 @@ export default class Component {
 
     wrapVars() {
         const reg = /{{([^}]+)}}/gis;
-        //var matches = [];
-
-        // log("SJ.Component.matchVars, this.templateCopy: ", this.templateCopy);
 
         if(this.count === 0) {
             const $children = this.$el.querySelectorAll('*');
@@ -194,11 +179,48 @@ export default class Component {
             for(let i = 0; i < $children.length; i++) {
                 const $child = $children[i];
 
+                // Check for child components
+                if(!Helper.isValidHTMLElement($child)) {
+                    const tagName = $child.tagName.toLowerCase();
+
+                    console.error(`${tagName} is not a valid HTML Element`);
+
+                    if(ComponentsRegister.isComponentRegistered(tagName)) {
+                        log(`${tagName} can be linked to component ${tagName}`);
+
+                        const wrapDiv = document.createElement("div");
+                        wrapDiv.setAttribute('id', "sj-child-comp-" + Helper.uuid4())
+
+                        wrapDiv.style.border = "0";
+                        wrapDiv.style.margin = "0";
+                        wrapDiv.style.padding = "0";
+
+                        log(`wrapVars $child['${tagName}'].parentElement: `, $child.parentElement)
+
+                        // insert wrapper before el in the DOM tree
+                        $child.parentElement.insertBefore(wrapDiv, $child);
+                        // move el into wrapper
+                        wrapDiv.appendChild($child);
+
+                        log(`wrapVars $child['${tagName}'] wrapDiv: `, wrapDiv)
+
+                        this.childComponentsMap.set(wrapDiv.id, tagName)
+
+                    } else {
+                        log(`${tagName}: cannot find component ${tagName}`);
+                    }
+
+                    // log('window[tagName]: ', window[tagName])
+
+                    continue;
+                }
+
                 // log('wrapVars $child: ', $child)
                 // log('wrapVars $child.parentElement: ', $child.parentElement)
 
                 if($child.hasAttribute('sj:for')) {
                     log('wrapVars $child has attribute "sj:for"', $child.tagName)
+
                     continue;
                 } else if($child.parentElement && $child.parentElement.hasAttribute('sj:for')) {
                     log('wrapVars $child.parentElement has attribute "sj:for"', $child.tagName, $child.parentElement.tagName)
@@ -206,12 +228,23 @@ export default class Component {
                     continue;
                 }
 
-                let lines = $child.innerHTML.split('\n');
+                if($child.children.length > 0) {
+                    continue;
+                }
+
+                for(let i = 0; i < $child.attributes; i++) {
+                    const attr = $child.attributes[i];
+
+                    log(`wrapVars attr $child.attributes[${i}]: `, attr)
+                }
+
+                const lines = $child.innerHTML.split('\n');
 
                 for (let i = 0; i < lines.length; i++) {
-                    var m = reg.exec(lines[i]);
+                    // var m = reg.exec(lines[i]);
+                    var m = null
 
-                    if (m) {
+                    while ( m = reg.exec(lines[i]) ) {
                         const prop = m[1].replace(/\s*/g, '')
 
                         log("wrapVars Matched " + m[0] + ": ", m, "On Element $child: ", $child);
@@ -226,18 +259,16 @@ export default class Component {
                             this.wrappedVarsMap.set(prop, [childId]);
                         }
 
-                        log('wrapVars $child.innerHTML: ', $child.innerHTML);
+                        // log('wrapVars $child.innerHTML: ', $child.innerHTML);
                     }
                 }
 
             }
 
-            this.templateOriginal = this.$el.innerHTML;
+            // this.templateOriginal = this.$el.innerHTML;
         }
 
-        this.templateCopy = this.templateOriginal;
-
-        // this.matchVarsWithRegex();
+        // this.templateCopy = this.templateOriginal;
 
         document.addEventListener('DOMContentLoaded', (event) => {
             console.log('DOM fully loaded and parsed');
@@ -250,7 +281,7 @@ export default class Component {
                 if(cloakEl && cloakEl.hasAttribute('sj-cloak')) {
                     cloakEl.removeAttribute('sj-cloak')
                 }
-            }, 1000)
+            }, 500)
 
         });
 
@@ -264,7 +295,7 @@ export default class Component {
 
             if(component.wrappedVarsMap.has(prop)) {
                 component.wrappedVarsMap.get(prop).forEach(id => {
-                    log(`Setting ${prop} on ${id} to ${newValue}`);
+                    log(`listenToPropChanges Setting ${prop} on ${id} to ${newValue}`);
 
                     const $child = component.$el.querySelector(`#${id}`);
 
@@ -276,70 +307,82 @@ export default class Component {
         })
     }
 
+    renderChildComponents() {
+        for(const [wrapDivId, compName] of this.childComponentsMap.entries()) {
+            log(`renderChildComponents rendering: ${compName}, id: ${wrapDivId}`)
+
+            var wrapDiv = document.getElementById(wrapDivId);
+
+            if(!wrapDiv) {
+                console.error(`renderChildComponents Cannot Find element div#${wrapDivId}, trying to create it`)
+
+                continue;
+/*
+                wrapDiv = document.createElement("div");
+                wrapDiv.setAttribute('id', wrapDivId)
+
+                wrapDiv.style.border = "0";
+                wrapDiv.style.margin = "0";
+                wrapDiv.style.padding = "0";
+
+                const $child = this.$el.querySelector(compName);
+
+                if(!$child) {
+                    console.error(`renderChildComponents Cannot Find <${compName}>, cannot render it`)
+
+                    return;
+                }
+
+                if(!$child.parentElement) {
+                    console.error(`renderChildComponents <${compName}> has not parent element, cannot render it`)
+
+                    return;
+                }
+                // insert wrapper before el in the DOM tree
+                $child.parentElement.insertBefore(wrapDiv, $child);
+                // move el into wrapper
+                wrapDiv.appendChild($child);*/
+            }
+
+            const component = ComponentsRegister.getRegisteredComponent(compName);
+
+            component.render(true);
+
+            wrapDiv.innerHTML = "";
+            wrapDiv.appendChild(component.getDomElement())
+        }
+    }
+
     matchWrappedVars() {
-
-        // const reg = /{{([^}]+)}}/gi;
-        //var matches = [];
-
-        // log("SJ.Component.matchVars, this.templateCopy: ", this.templateCopy);
 
         this.templateCopy = this.templateOriginal;
 
         for (const [prop, childId] of this.wrappedVarsMap.entries()) {
-            log(`Setting ${prop} on `, childId);
+            log(`matchWrappedVars Setting ${prop} on `, childId);
 
             childId.forEach(id => {
                 const $child = this.$el.querySelector(`#${id}`);
 
                 if($child) {
-                    if(this.props.hasOwnProperty(prop)) {
-                        const newValue = this.props[prop];
-                        if($child.innerHTML !== newValue) {
-                            log(`Setting ${prop} on ${childId} to ${newValue}`);
+                    // if(this.props.hasOwnProperty(prop)) {
+                    //     const newValue = this.props[prop];
 
-                            $child.innerHTML = this.props[prop];
+                        const newValue = (new Function(` return ${prop}`).bind(this.props.props))();
+                        // const expr = eval(prop);
+
+                        log(`matchWrappedVars expr: `, newValue);
+
+                        if($child.innerHTML !== newValue) {
+                            log(`matchWrappedVars Setting ${prop} on ${childId} to ${newValue}`);
+
+                            $child.innerHTML = newValue;
                         } else {
                             log(`Same Value For ${prop} on ${childId} to ${newValue}`);
                         }
-                    }
+                    // }
                 }
             })
         }
-
-    }
-
-    matchVarsWithRegex() {
-        const reg = /{{([^}]+)}}/gi;
-        //var matches = [];
-
-        // log("SJ.Component.matchVars, this.templateCopy: ", this.templateCopy);
-
-        this.templateCopy = this.templateOriginal;
-
-        do {
-            var m = reg.exec(this.templateCopy);
-
-            if(!m) {
-                break;
-            }
-
-            const prop = m[1].replace(/\s*/g, '')
-
-            log("Matched " + m[0] + ": ", m);
-
-            console.log('this.props: ', this.props)
-
-            if(!this.props.hasOwnProperty(prop)) {
-                throw new Error("SJ.Component, cannot find: " + m[0]);
-            }
-
-            log(m[0] + " value: ", this.props[ prop ]);
-
-            this.templateCopy = this.templateCopy.replace(m[0], this.props[ prop ]);
-
-            log("SJ.Component.matchVars, this.templateCopy 2: ", this.templateCopy);
-
-        } while(m);
 
     }
 }

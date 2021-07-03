@@ -1,6 +1,7 @@
 import Helper from "./Helper.js";
 
 import log from "./Log";
+import ComponentsRegister from "./ComponentsRegister";
 
 export default class Router {
 
@@ -12,6 +13,12 @@ export default class Router {
         }
 
         this.routes = routes;
+
+        for(const [path, opts] of this.routes.routes.entries()) {
+            log(`Router Registering Component For path: ${path}, opts: `, opts)
+
+            ComponentsRegister.registerComponent(opts.component)
+        }
 
         this.history = []
 
@@ -61,7 +68,7 @@ export default class Router {
 
         component.setRouter(this);
 
-        component.render();
+        component.render(true);
 
         this.$root.innerHTML = "";
         this.$root.appendChild(component.getDomElement());
@@ -74,11 +81,7 @@ export default class Router {
     }
 
     filterPathname(pathname) {
-        if(pathname === "/") {
-            pathname = "index";
-        }
-
-        return pathname;
+        return pathname === '/' ? 'index' : pathname;
     }
 
     historyPush(pathname) {
@@ -99,6 +102,8 @@ export default class Router {
     }
 
     getComponent(pathname) {
+        log('Router pathname: ', pathname);
+
         const r = this.get(pathname);
         return r.component;
     }

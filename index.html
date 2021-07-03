@@ -45,9 +45,9 @@
     <script src="/dist/smart.js"></script>
 
     <template HomeComponent>
-        <h1>{{title}}</h1>
-        <h2>Fai il Login {{text}} ?</h2>
-        <button id='magicButton1' sj-click='goToLogin' class="btn btn-primary">Vai Al Login {{text}} !</button>
+        <h1>{{this.title}}</h1>
+        <h2>Fai il Login {{this.text}} ?</h2>
+        <button id='magicButton1' sj:click='goToLogin' class="btn btn-primary">Vai Al Login {{this.text}} !</button>
     </template>
 
     <script>
@@ -78,15 +78,56 @@
         });
     </script>
 
+    <template HelloWorld>
+        <div>
+            <div>Hello {{this.name}} !</div>
+            <br>
+            I'm the Hello World Component !
+
+            <form>
+                <div class="form-group row">
+                    <label for="checkme">
+                        <input type="checkbox" name="checkme" sj:model="checkme">
+
+                        <span>Check Me !</span>
+                    </label>
+                </div>
+            </form>
+        </div>
+
+        <button class="btn btn-primary" sj:click="sayhello">Click Me !</button>
+    </template>
+
+    <script>
+        const HelloWorldComponent = new SJ.Component({
+            name: "HelloWorld",
+            props: {
+                name: "Marco",
+                checkme: true
+            },
+            methods: {
+                sayhello: (ev) => {
+                    ev.preventDefault();
+
+                    alert("Hello World !");
+                }
+            },
+            template: document.querySelector('[HelloWorld]'),
+            render: () => {
+                console.log("HelloWorld render()");
+            }
+        });
+    </script>
+
     <template LoginComponent>
         <div sj-cloak>
-            <h1>{{ title }}</h1>
-            <h2>Fai il Login {{ text }} !</h2>
+            <h1>{{ this.title }}</h1>
+            <h2>Fai il Login {{ this.text }} !</h2>
 
             <div sj:if="this.showDiv" sj:if-class="{ 'animate__animated animate__fadeIn animate__fast': this.showDiv }">
-                Your username is {{ login }}
-                <br>
-                And Your Password is {{ password }}
+                <div>Your username is {{ this.login }}</div>
+
+                <div>And Your Password is {{ this.password }}</div>
             </div>
 
             <div sj:if-class="{ 'hide': !this.showDiv, 'animate__animated animate__fadeIn animate__fast': this.showDiv }">
@@ -96,6 +137,10 @@
             <form sj:submit="submit">
 
                 <div class="form-group row">
+                    <h1 class="{{ this.h1Class }}">{{ this.h1Text }}</h1>
+                </div>
+
+                <div class="form-group row">
                     <input type="text" sj:model="login" name="login" id="login" placeholder="Login" class="form-control mb-4">
                 </div>
 
@@ -103,9 +148,15 @@
                     <input type="password" sj:model="password" name="password" id="password" placeholder="Password" class="form-control mb-4">
                 </div>
 
-                <div class="form-group row">
-                    <select name="city" sj:for="city of cities">
-                        <option value="{{ city.id }}">{{ city.city }}</option>
+                <div class="form-group row" sj:if-class="{ 'mb-4': !this.country, 'mb-2': this.country }">
+                    <select name="country" sj:for="country of countries" sj:model="country" sj:change="onCountrySelect">
+                        <option value="{{ country }}">{{ country }}</option>
+                    </select>
+                </div>
+
+                <div class="form-group row mb-4">
+                    <select name="city" sj:for="city of cities" sj:model="city">
+                        <option value="{{ city.id }}">{{ $index + 1 }} - {{ city.city }}</option>
                     </select>
                 </div>
 
@@ -115,14 +166,46 @@
 
             </form>
 
-            <button id='magicButton2' sj:click='changeTitle' class="btn btn-primary">Cambia Il Titolo !</button>
+            <div class="row mb-4">
 
-            <button id='magicButton3' sj:click='toggleDiv' class="btn btn-primary">Toggle Div !</button>
+                <div class="col">
+                    <button id='magicButton2' sj:click='changeTitle' class="btn btn-primary">Cambia Il Titolo !</button>
+                </div>
 
-            <button id='magicButton4' sj:click='updateLoginPsw' class="btn btn-primary">Update Login And Password !</button>
-            <p sj:if-class="{ 'hide': (this.login === '') }">
-                Login: {{ login }}
-            </p>
+                <div class="col">
+                    <button id='magicButton3' sj:click='toggleDiv' class="btn btn-primary">Toggle Div !</button>
+                </div>
+
+                <div class="col">
+                    <button id='magicButton4' sj:click='updateLoginPsw' class="btn btn-primary">Update Login And Password !</button>
+                </div>
+
+            </div>
+
+            <div class="row">
+                <button id='magicButton5' sj:click='chooseRandomCity' class="btn btn-primary btn-block">Choose Random City</button>
+            </div>
+
+            <div class="row">
+                <p sj:if-class="{ 'hide': (this.login === '') }">
+                    Login: {{ this.login }}
+                </p>
+            </div>
+
+            <div class="row">
+                <p sj:if="this.city">
+                    this.city: {{ this.city }}
+                </p>
+
+                <p sj:if="this.city && this.country">
+                    You Choose: {{ this.country }} {{ this.cities[this.city-1].city }}
+                </p>
+            </div>
+
+            <div class="row">
+                Hello World Component Div
+                <HelloWorld />
+            </div>
         </div>
     </template>
 
@@ -133,9 +216,61 @@
             props: {
                 title: "Ecco Il Login",
                 text: "Marta",
+                h1Text: 'Form Header',
+                // h1Class: 'text-center',
                 showDiv: false,
                 login: '',
                 password: '',
+                country: 'Italy',
+                city: 3,
+                countries: [
+                    'Italy',
+                    'Argentina',
+                    'Brazil',
+                    'USA'
+                ],
+                cities: [
+                    {
+                        id: 1,
+                        city: 'Milano'
+                    },
+                    {
+                        id: 2,
+                        city: 'Roma'
+                    },
+                    {
+                        id: 3,
+                        city: 'Napoli'
+                    },
+                    {
+                        id: 4,
+                        city: 'Tortona'
+                    },
+                    {
+                        id: 5,
+                        city: 'Chieti'
+                    },
+                    {
+                        id: 6,
+                        city: 'Lugano'
+                    },
+                    {
+                        id: 7,
+                        city: 'Bogotà'
+                    },
+                    {
+                        id: 8,
+                        city: 'Gaeta'
+                    },
+                    {
+                        id: 9,
+                        city: 'Camogli'
+                    },
+                    {
+                        id: 10,
+                        city: 'Limassol'
+                    },
+                ]
             },
             methods: {
                 changeTitle: function(ev) {
@@ -153,6 +288,12 @@
                 updateLoginPsw: function (ev) {
                     this.props.login = 'AJO !'
                     this.props.password = 'EHIAHAIAIAI'
+                },
+                chooseRandomCity: (ev) => {
+                    this.props.city = 1+Math.floor(Math.random() * this.props.cities.length);
+                },
+                onCountrySelect: (ev) => {
+                    alert(`Hai scelto ${this.props.country}`);
                 }
             },
             template: document.querySelector('[LoginComponent]'),
@@ -162,25 +303,36 @@
                 // console.log(this);
 
                 // this.props.title = "BOMBA !";
-            }
+            },
+            childComponents: [
+                HelloWorldComponent
+            ]
         });
 
+    </script>
+
+
+    <script>
         new SJ.App({
             rootElement: '#appHook',
             router: new SJ.Router({
                 routes: new Map([
-                    /*["home", {
+                    ["/home", {
                         path: "/home",
                         component: HomeComponent
-                    }],*/
+                    }],
                     ["index", {
                         path: "/",
                         component: LoginComponent
                     }]
                 ])
-            })
+            }),
+            components: [
+                HomeComponent,
+                HelloWorldComponent,
+                LoginComponent,
+            ]
         });
-
     </script>
 
 </body>

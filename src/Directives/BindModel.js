@@ -19,14 +19,34 @@ export default class BindModel {
             const type = $el.getAttribute('type');
 
             if(type === 'text' || type === 'password' || type ===' email' || type === 'phone') {
-                if(!$el.value || $el.value === '') {
+                if($el.value !== $scope.props[args]) {
                     $el.value = $scope.props[args];
                 }
 
                 BrowserEvent.attachEvent($el, 'input', function(ev) {
                     $scope.props[args] = ev.target.value;
                 }, 'setPropToInputValue');
+            } else if(type === 'checkbox') {
+                if($el.value !== $scope.props[args]) {
+                    $el.checked = $scope.props[args];
+                }
+
+                BrowserEvent.attachEvent($el, 'change', function(ev) {
+                    $scope.props[args] = ev.target.checked;
+                }, 'setPropToCheckboxValue');
             }
+        } else if(tag === 'select') {
+            if($el.value !== $scope.props[args]) {
+                $el.value = $scope.props[args];
+
+                // $el.dispatchEvent(new Event('change'));
+            }
+
+            BrowserEvent.attachEvent($el, 'change', function(ev) {
+                if($el.value !== $scope.props[args]) {
+                    $scope.props[args] = ev.target.value;
+                }
+            }, 'setPropToSelectValue');
         }
     }
 }

@@ -13,20 +13,11 @@ export default class Helper {
         return `${ho(view.getUint32(0), 8)}-${ho(view.getUint16(4), 4)}-${ho(view.getUint16(6), 4)}-${ho(view.getUint16(8), 4)}-${ho(view.getUint32(10), 8)}${ho(view.getUint16(14), 4)}`; /// Compile the canonical textual form from the array data
     }
 
-    static async sha256(message) {
-        // encode as UTF-8
-        const msgBuffer = new TextEncoder().encode(message);
-        // hash the message
-        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-        // convert ArrayBuffer to Array
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        // convert bytes to hex string
-        return hashArray.map(b => ('00' + b.toString(16)).slice(-2)).join('');
+    static isValidHTMLElement(element) {
+        return document.createElement(element.tagName.toUpperCase()).toString() !== "[object HTMLUnknownElement]";
     }
 
     static isArrowFn(f) {
-        // log('f.toString: ', f.toString())
-
         return typeof f === 'function' && (/^([^{=]+|\(.*\)\s*)?=>/).test(f.toString().replace(/\s/, ''))
     }
 
