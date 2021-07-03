@@ -1,11 +1,12 @@
+import ComponentsRegister from "./ComponentsRegister";
 import PropsProxy from "./PropsProxy";
-
-import Helper from "./Helper";
-import log from "./Log";
 import AttributesDispatcher from "./Directives/AttributesDispatcher";
 import Router from "./Router";
+import SaferEval from "./SaferEval";
 
-import ComponentsRegister from "./ComponentsRegister";
+import Helper from "./Helper";
+
+import log from "./Log";
 
 export default class Component {
 
@@ -170,8 +171,54 @@ export default class Component {
 
     }
 
+    isSkippableElement($child) {
+        if($child.hasAttribute('sj:for')) {
+            log('wrapVars $child has attribute "sj:for"', $child.tagName)
+
+            return true;
+        } else if($child.parentElement && $child.parentElement.hasAttribute('sj:for')) {
+            log('wrapVars $child.parentElement has attribute "sj:for"', $child.tagName, $child.parentElement.tagName)
+
+            return true;
+        }
+
+        if($child.children.length > 0) {
+            return true;
+        }
+    }
+
+    processInvalidHTMLElements($child) {
+        const tagName = $child.tagName.toLowerCase();
+
+        console.error(`${tagName} is not a valid HTML Element`);
+
+        if(ComponentsRegister.isComponentRegistered(tagName)) {
+            log(`${tagName} can be linked to component ${tagName}`);
+
+            const wrapDiv = document.createElement("div");
+            wrapDiv.setAttribute('id', "sj-child-comp-" + Helper.uuid4())
+
+            wrapDiv.style.border = "0";
+            wrapDiv.style.margin = "0";
+            wrapDiv.style.padding = "0";
+
+            log(`wrapVars $child['${tagName}'].parentElement: `, $child.parentElement)
+
+            // insert wrapper before el in the DOM tree
+            $child.parentElement.insertBefore(wrapDiv, $child);
+            // move el into wrapper
+            wrapDiv.appendChild($child);
+
+            log(`wrapVars $child['${tagName}'] wrapDiv: `, wrapDiv)
+
+            this.childComponentsMap.set(wrapDiv.id, tagName)
+
+        } else {
+            log(`${tagName}: cannot find component ${tagName}`);
+        }
+    }
+
     wrapVars() {
-        const reg = /{{([^}]+)}}/gis;
 
         if(this.count === 0) {
             const $children = this.$el.querySelectorAll('*');
@@ -181,87 +228,19 @@ export default class Component {
 
                 // Check for child components
                 if(!Helper.isValidHTMLElement($child)) {
-                    const tagName = $child.tagName.toLowerCase();
 
-                    console.error(`${tagName} is not a valid HTML Element`);
-
-                    if(ComponentsRegister.isComponentRegistered(tagName)) {
-                        log(`${tagName} can be linked to component ${tagName}`);
-
-                        const wrapDiv = document.createElement("div");
-                        wrapDiv.setAttribute('id', "sj-child-comp-" + Helper.uuid4())
-
-                        wrapDiv.style.border = "0";
-                        wrapDiv.style.margin = "0";
-                        wrapDiv.style.padding = "0";
-
-                        log(`wrapVars $child['${tagName}'].parentElement: `, $child.parentElement)
-
-                        // insert wrapper before el in the DOM tree
-                        $child.parentElement.insertBefore(wrapDiv, $child);
-                        // move el into wrapper
-                        wrapDiv.appendChild($child);
-
-                        log(`wrapVars $child['${tagName}'] wrapDiv: `, wrapDiv)
-
-                        this.childComponentsMap.set(wrapDiv.id, tagName)
-
-                    } else {
-                        log(`${tagName}: cannot find component ${tagName}`);
-                    }
-
-                    // log('window[tagName]: ', window[tagName])
+                    this.processInvalidHTMLElements($child);
 
                     continue;
                 }
 
-                // log('wrapVars $child: ', $child)
-                // log('wrapVars $child.parentElement: ', $child.parentElement)
-
-                if($child.hasAttribute('sj:for')) {
-                    log('wrapVars $child has attribute "sj:for"', $child.tagName)
-
-                    continue;
-                } else if($child.parentElement && $child.parentElement.hasAttribute('sj:for')) {
-                    log('wrapVars $child.parentElement has attribute "sj:for"', $child.tagName, $child.parentElement.tagName)
-
+                if(this.isSkippableElement($child)) {
                     continue;
                 }
 
-                if($child.children.length > 0) {
-                    continue;
-                }
+                this.mapAttributes($child);
 
-                for(let i = 0; i < $child.attributes; i++) {
-                    const attr = $child.attributes[i];
-
-                    log(`wrapVars attr $child.attributes[${i}]: `, attr)
-                }
-
-                const lines = $child.innerHTML.split('\n');
-
-                for (let i = 0; i < lines.length; i++) {
-                    // var m = reg.exec(lines[i]);
-                    var m = null
-
-                    while ( m = reg.exec(lines[i]) ) {
-                        const prop = m[1].replace(/\s*/g, '')
-
-                        log("wrapVars Matched " + m[0] + ": ", m, "On Element $child: ", $child);
-
-                        const childId = "sj-var-" + Helper.uuid4()
-
-                        $child.innerHTML = $child.innerHTML.replace(m[0], `<div id="${childId}" style="display: inline;">${m[0]}</div>`);
-
-                        if (this.wrappedVarsMap.has(prop)) {
-                            this.wrappedVarsMap.get(prop).push(childId);
-                        } else {
-                            this.wrappedVarsMap.set(prop, [childId]);
-                        }
-
-                        // log('wrapVars $child.innerHTML: ', $child.innerHTML);
-                    }
-                }
+                this.mapVars($child);
 
             }
 
@@ -270,6 +249,12 @@ export default class Component {
 
         // this.templateCopy = this.templateOriginal;
 
+        this.removeSjCloak();
+
+        this.listenToPropChanges();
+    }
+
+    removeSjCloak() {
         document.addEventListener('DOMContentLoaded', (event) => {
             console.log('DOM fully loaded and parsed');
 
@@ -284,8 +269,43 @@ export default class Component {
             }, 500)
 
         });
+    }
 
-        this.listenToPropChanges();
+    mapAttributes($child) {
+        for(let i = 0; i < Array.from($child.attributes); i++) {
+            const attr = $child.attributes[i];
+
+            log(`wrapVars attr $child.attributes[${i}]: `, attr)
+        }
+    }
+
+    mapVars($child) {
+        const reg = /{{([^}]+)}}/gis;
+
+        const lines = $child.innerHTML.split('\n');
+
+        for (let i = 0; i < lines.length; i++) {
+            // var m = reg.exec(lines[i]);
+            var m = null
+
+            while ( m = reg.exec(lines[i]) ) {
+                const prop = m[1].replace(/\s*/g, '')
+
+                log("wrapVars Matched " + m[0] + ": ", m, "On Element $child: ", $child);
+
+                const childId = "sj-var-" + Helper.uuid4()
+
+                $child.innerHTML = $child.innerHTML.replace(m[0], `<div id="${childId}" style="display: inline;">${m[0]}</div>`);
+
+                if (this.wrappedVarsMap.has(prop)) {
+                    this.wrappedVarsMap.get(prop).push(childId);
+                } else {
+                    this.wrappedVarsMap.set(prop, [childId]);
+                }
+
+                // log('wrapVars $child.innerHTML: ', $child.innerHTML);
+            }
+        }
     }
 
     listenToPropChanges() {
@@ -355,7 +375,7 @@ export default class Component {
 
     matchWrappedVars() {
 
-        this.templateCopy = this.templateOriginal;
+        // this.templateCopy = this.templateOriginal;
 
         for (const [prop, childId] of this.wrappedVarsMap.entries()) {
             log(`matchWrappedVars Setting ${prop} on `, childId);
@@ -363,11 +383,19 @@ export default class Component {
             childId.forEach(id => {
                 const $child = this.$el.querySelector(`#${id}`);
 
+                log(`matchWrappedVars Element: `, $child, $child.parentElement);
+
                 if($child) {
                     // if(this.props.hasOwnProperty(prop)) {
                     //     const newValue = this.props[prop];
 
-                        const newValue = (new Function(` return ${prop}`).bind(this.props.props))();
+                        // const newValue = (new Function(` with(this){ return ${prop} }`).bind(this.props.props))();
+                        try {
+                            var newValue = SaferEval.exec(prop, this.props.props);
+                        } catch (e) {
+                            console.error(`SaferEval error: `, e);
+                        }
+
                         // const expr = eval(prop);
 
                         log(`matchWrappedVars expr: `, newValue);

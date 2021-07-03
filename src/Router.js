@@ -1,7 +1,7 @@
+import ComponentsRegister from "./ComponentsRegister";
 import Helper from "./Helper.js";
 
 import log from "./Log";
-import ComponentsRegister from "./ComponentsRegister";
 
 export default class Router {
 

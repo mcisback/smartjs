@@ -8,53 +8,59 @@ export default class BrowserEventDispatcher {
 
         log('$scope.methods: ', $scope.methods)
 
-        const method = $scope.methods[methodName];
+        let method = $scope.methods[methodName];
+
+        var eventHandler = null;
 
         if(!method) {
-            throw new Error("BrowserEventDispatcher: Method, cannot find method: " + methodName);
-        }
+            // throw new Error("BrowserEventDispatcher: Method, cannot find method: " + methodName);
+            console.error(`BrowserEventDispatcher: Method, cannot find method: "${methodName}"\nTrying to run expr: (${methodName})`);
 
-        if(Helper.isArrowFn(method)) {
-            log(`${methodName} is an arrow function !`)
-        }
+            eventHandler = (new Function(` with(this){ return (${methodName}) }`).bind($scope.props));
+        } else {
 
-        log("--- addEventListener ---");
-        log(`${event} -> ${methodName}`)
-
-        const eventHandler = (function(comp, method) {
-
-            if(typeof method !== 'function') {
-                throw new Error('SJ.BrowserEventDispatcher: eventHandler method is not a function')
+            if (Helper.isArrowFn(method)) {
+                log(`${methodName} is an arrow function !`)
             }
 
-            return function (e) {
-                log("Called eventHandler ! Calling object: ", e.target);
+            log("--- addEventListener ---");
+            log(`${event} -> ${methodName}`)
 
-                if(preventDefault === true) {
-                    log('Preventing default for: ', $el.tagName)
+            eventHandler = (function (comp, method) {
 
-                    e.preventDefault()
+                if (typeof method !== 'function') {
+                    throw new Error('SJ.BrowserEventDispatcher: eventHandler method is not a function')
                 }
 
-                let m = method;
+                return function (e) {
+                    log("Called eventHandler ! Calling object: ", e.target);
 
-                if(Helper.isArrowFn(method)) {
+                    if (preventDefault === true) {
+                        log('Preventing default for: ', $el.tagName)
 
-                    m = function(e) {
-                        console.log('context: ', comp)
+                        e.preventDefault()
+                    }
 
-                        const arrowFn = eval(method.toString());
-                        return arrowFn(e);
-                    }.bind(comp)
+                    let m = method;
 
-                } else {
-                    m = m.bind(comp);
+                    if (Helper.isArrowFn(method)) {
+
+                        m = function (e) {
+                            console.log('context: ', comp)
+
+                            const arrowFn = eval(method.toString());
+                            return arrowFn(e);
+                        }.bind(comp)
+
+                    } else {
+                        m = m.bind(comp);
+                    }
+
+                    return m(e);
                 }
 
-                return m(e);
-            }
-
-        })($scope, method);
+            })($scope, method);
+        }
 
         BrowserEvent.attachEvent($el, event, eventHandler, methodName);
     }

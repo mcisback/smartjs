@@ -45,9 +45,9 @@
     <script src="/dist/smart.js"></script>
 
     <template HomeComponent>
-        <h1>{{this.title}}</h1>
-        <h2>Fai il Login {{this.text}} ?</h2>
-        <button id='magicButton1' sj:click='goToLogin' class="btn btn-primary">Vai Al Login {{this.text}} !</button>
+        <h1>{{title}}</h1>
+        <h2>Fai il Login {{text}} ?</h2>
+        <button id='magicButton1' sj:click='goToLogin' class="btn btn-primary">Vai Al Login {{text}} !</button>
     </template>
 
     <script>
@@ -80,13 +80,17 @@
 
     <template HelloWorld>
         <div>
-            <div>Hello {{this.name}} !</div>
+            <div>Hello {{name}} !</div>
             <br>
             I'm the Hello World Component !
 
+            <div sj:if="checkme">
+                <h2>You Checked Me !</h2>
+            </div>
+
             <form>
                 <div class="form-group row">
-                    <label for="checkme">
+                    <label for="checkme" sj:click="checkme = !checkme">
                         <input type="checkbox" name="checkme" sj:model="checkme">
 
                         <span>Check Me !</span>
@@ -103,7 +107,7 @@
             name: "HelloWorld",
             props: {
                 name: "Marco",
-                checkme: true
+                checkme: false
             },
             methods: {
                 sayhello: (ev) => {
@@ -121,23 +125,23 @@
 
     <template LoginComponent>
         <div sj-cloak>
-            <h1>{{ this.title }}</h1>
-            <h2>Fai il Login {{ this.text }} !</h2>
+            <h1>{{ title }}</h1>
+            <h2>Fai il Login {{ text }} !</h2>
 
-            <div sj:if="this.showDiv" sj:if-class="{ 'animate__animated animate__fadeIn animate__fast': this.showDiv }">
-                <div>Your username is {{ this.login }}</div>
+            <div sj:if="showDiv" sj:if-class="{ 'animate__animated animate__fadeIn animate__fast': showDiv }">
+                <div>Your username is {{ login }}</div>
 
-                <div>And Your Password is {{ this.password }}</div>
+                <div>And Your Password is {{ password }}</div>
             </div>
 
-            <div sj:if-class="{ 'hide': !this.showDiv, 'animate__animated animate__fadeIn animate__fast': this.showDiv }">
+            <div sj:if-class="{ 'hide': !showDiv, 'animate__animated animate__fadeIn animate__fast': showDiv }">
                 IfClass Toggled ! Ciccio Baliccio
             </div>
 
             <form sj:submit="submit">
 
                 <div class="form-group row">
-                    <h1 class="{{ this.h1Class }}">{{ this.h1Text }}</h1>
+                    <h1 class="{{ h1Class }}">{{ h1Text }}</h1>
                 </div>
 
                 <div class="form-group row">
@@ -148,7 +152,7 @@
                     <input type="password" sj:model="password" name="password" id="password" placeholder="Password" class="form-control mb-4">
                 </div>
 
-                <div class="form-group row" sj:if-class="{ 'mb-4': !this.country, 'mb-2': this.country }">
+                <div class="form-group row" sj:if-class="{ 'mb-4': !country, 'mb-2': country }">
                     <select name="country" sj:for="country of countries" sj:model="country" sj:change="onCountrySelect">
                         <option value="{{ country }}">{{ country }}</option>
                     </select>
@@ -187,18 +191,18 @@
             </div>
 
             <div class="row">
-                <p sj:if-class="{ 'hide': (this.login === '') }">
-                    Login: {{ this.login }}
+                <p sj:if-class="{ 'hide': (login === '') }">
+                    Login: {{ login }}
                 </p>
             </div>
 
             <div class="row">
-                <p sj:if="this.city">
-                    this.city: {{ this.city }}
+                <p sj:if="city">
+                    city: {{ city }}
                 </p>
 
                 <p sj:if="this.city && this.country">
-                    You Choose: {{ this.country }} {{ this.cities[this.city-1].city }}
+                    You Choose: {{ country }} {{ cities[city-1].city }}
                 </p>
             </div>
 

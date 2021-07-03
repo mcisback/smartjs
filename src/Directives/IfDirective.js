@@ -1,3 +1,5 @@
+import SaferEval from "../SaferEval";
+
 import log from "../Log";
 
 export default class IfDirective {
@@ -6,7 +8,7 @@ export default class IfDirective {
         log('$el.tagName: ', $el.tagName)
         log('IfDirective vars: ', { event, args }, $scope)
 
-        const exprResult = (new Function(` return ${args}`).bind($scope.props))();
+        const exprResult = SaferEval.exec(args, $scope.props);
 
         if(exprResult) {
             $el.style.display = 'block';

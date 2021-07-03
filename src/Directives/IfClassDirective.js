@@ -1,3 +1,5 @@
+import SaferEval from "../SaferEval";
+
 import log from "../Log";
 
 export default class IfClassDirective {
@@ -6,7 +8,7 @@ export default class IfClassDirective {
         log('$el.tagName: ', $el.tagName)
         log('IfClassDirective vars: ', { event, args }, $scope.name)
 
-        const classMap = (new Function(` return ${args}`).bind($scope.props))();
+        const classMap = SaferEval.exec(args, $scope.props);
 
         log('IfClassDirective classMap: ', classMap)
 

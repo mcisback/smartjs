@@ -1,3 +1,5 @@
+import SaferEval from "../SaferEval";
+
 import log from "../Log";
 
 // https://stackoverflow.com/questions/6491463/accessing-nested-javascript-objects-and-arrays-by-string-path
@@ -68,7 +70,7 @@ export default class ForDirective {
 
                         log('ForDirective newHtml: ', newHtml, ' fields[0]: ', fields[0]);
 
-                        const exprResult = (new Function(` return (${newHtml})`).bind($scope.props))();
+                        const exprResult = SaferEval.exec(newHtml, $scope.props);
 
                         fHtml = fHtml.replaceAll(fields[0], exprResult)
 
@@ -83,7 +85,7 @@ export default class ForDirective {
 
                         log('ForDirective newHtml: ', newHtml, ' fields[0]: ', fields[0]);
 
-                        const exprResult = (new Function(` return (${newHtml})`).bind($scope.props))();
+                        const exprResult = SaferEval.exec(newHtml, $scope.props);
 
                         fHtml = fHtml.replaceAll(fields[0], exprResult)
 
