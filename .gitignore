@@ -7,6 +7,7 @@ yarn-error.log*
 
 # Webstorm
 .idea
+.idea/*
 
 # Webpack
 dist
