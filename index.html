@@ -84,6 +84,8 @@
             <br>
             I'm the Hello World Component !
 
+            <div>Parent says {{ country }}, {{ city.name }} !</div>
+
             <div sj:if="checkme">
                 <h2>You Checked Me !</h2>
             </div>
@@ -107,7 +109,9 @@
             name: "HelloWorld",
             props: {
                 name: "Marco",
-                checkme: false
+                checkme: false,
+                city: null,
+                country: null
             },
             methods: {
                 sayhello: (ev) => {
@@ -128,6 +132,8 @@
             <h1>{{ title }}</h1>
             <h2>Fai il Login {{ text }} !</h2>
 
+            <h3 sj:ref="hiddenTitle">Trova una soluzione {{ eugenio }}</h3>
+
             <div sj:if="showDiv" sj:if-class="{ 'animate__animated animate__fadeIn animate__fast': showDiv }">
                 <div>Your username is {{ login }}</div>
 
@@ -141,7 +147,7 @@
             <form sj:submit="submit">
 
                 <div class="form-group row">
-                    <h1 class="{{ h1Class }}">{{ h1Text }}</h1>
+                    <h1 class="font-weight-bold {{ showDiv ? customClass : '' }}">{{ h1Text }}</h1>
                 </div>
 
                 <div class="form-group row">
@@ -159,9 +165,44 @@
                 </div>
 
                 <div class="form-group row mb-4">
-                    <select name="city" sj:for="city of cities" sj:model="city">
-                        <option value="{{ city.id }}">{{ $index + 1 }} - {{ city.city }}</option>
+<!--                    <option sj:if="{{city.id === 3}}" value="{{ city.id }}">{{ $index + 1 }} - {{ "Buona Pizza: " + city.name }} - {{ eugenio + " e le luci elettriche" }}</option>-->
+
+                    <select name="city" sj:for="city of cities" sj:model="city" :key="id">
+                        <option sj:skip sj:if="{{city.id !== 3}}" value="{{ city.id }}">{{ $index + 1 }} - {{ "Seleziona: " + city.name }} - {{ eugenio + " e le luci elettriche" }}</option>
                     </select>
+
+                    <button class="btn btn-primary btn-block" sj:click="addCity">
+                        Aggiungi Una Città {{ eugenio }}
+                    </button>
+                </div>
+
+                <div class="form-group row mb-4">
+                    <div sj:for="coord of coords">
+                        <div id="coord-{{ $index }}" sj:click="youClicked('{{ $index }}')" sj:skip>
+                            {{ coord }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group row mb-4">
+                    <h3>TODOS:</h3>
+                </div>
+
+                <div class="form-group row mb-4" sj:render-if="todos">
+                    <div sj:for="todo of todos">
+                        <div id="todo-{{ $index }}">
+                            {{ todo.completed }} - {{ todo.title }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group row mb-4">
+                    <div class="col">
+                        <textarea name="message" id="message" cols="30" rows="10" sj:model="message"></textarea>
+                    </div>
+                    <div class="col" sj:if="message !== 'Write Here Your Message' && message" style="max-width: 12rem;">
+                        You Wrote: <pre style="font-weight: bold; height: 100%; word-break: break-word; white-space: pre-wrap;">{{message}}</pre>
+                    </div>
                 </div>
 
                 <div class="form-group row">
@@ -169,6 +210,25 @@
                 </div>
 
             </form>
+
+            <div class="form-group row mb-4">
+                <div class="col">
+                    <label for="genre1">
+                        <input type="radio" name="genre" id="genre1" sj:model="genre" value="Male">
+                        <span>Male</span>
+                    </label>
+                    <br>
+                    <label for="genre2">
+                        <input type="radio" name="genre" id="genre2" sj:model="genre" value="Female">
+                        <span>Female</span>
+                    </label>
+                </div>
+                <div class="col">
+                    <div sj:if="genre">
+                        You Picked {{ genre }}
+                    </div>
+                </div>
+            </div>
 
             <div class="row mb-4">
 
@@ -201,32 +261,52 @@
                     city: {{ city }}
                 </p>
 
-                <p sj:if="this.city && this.country">
-                    You Choose: {{ country }} {{ cities[city-1].city }}
+                <p sj:if="city && country">
+                    You Choose: {{ country }} - {{ cities[city-1].name }}
                 </p>
             </div>
 
             <div class="row">
                 Hello World Component Div
-                <HelloWorld />
+                <HelloWorld country="{{ country + ' dove vive Eugenio' }}" city="{{ cities[city-1] }}" />
             </div>
         </div>
     </template>
 
     <script type="text/javascript">
 
+        function xhttpGet(url, callback) {
+            const xhttp = new XMLHttpRequest();
+
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    // Typical action to be performed when the document is ready:
+                    // document.getElementById("demo").innerHTML = xhttp.responseText;
+                    callback(xhttp.responseText)
+                }
+            };
+
+            xhttp.open("GET", url, true);
+            xhttp.send();
+        }
+
         const LoginComponent = new SJ.Component({
             name: "Login",
             props: {
                 title: "Ecco Il Login",
                 text: "Marta",
+                eugenio: "Eugenio",
                 h1Text: 'Form Header',
-                // h1Class: 'text-center',
+                customClass: 'text-center',
                 showDiv: false,
                 login: '',
                 password: '',
                 country: 'Italy',
-                city: 3,
+                genre: 'Male',
+                message: 'Write Here Your Message',
+                city: 4,
+                todos: [
+                ],
                 countries: [
                     'Italy',
                     'Argentina',
@@ -236,50 +316,101 @@
                 cities: [
                     {
                         id: 1,
-                        city: 'Milano'
+                        name: 'Milano'
                     },
                     {
                         id: 2,
-                        city: 'Roma'
+                        name: 'Roma'
                     },
                     {
                         id: 3,
-                        city: 'Napoli'
+                        name: 'Napoli'
                     },
                     {
                         id: 4,
-                        city: 'Tortona'
+                        name: 'Tortona'
                     },
                     {
                         id: 5,
-                        city: 'Chieti'
+                        name: 'Chieti'
                     },
                     {
                         id: 6,
-                        city: 'Lugano'
+                        name: 'Lugano'
                     },
                     {
                         id: 7,
-                        city: 'Bogotà'
+                        name: 'Bogotà'
                     },
                     {
                         id: 8,
-                        city: 'Gaeta'
+                        name: 'Gaeta'
                     },
                     {
                         id: 9,
-                        city: 'Camogli'
+                        name: 'Camogli'
                     },
                     {
                         id: 10,
-                        city: 'Limassol'
+                        name: 'Limassol'
                     },
+                ],
+                coords: [
+                    'North',
+                    'East',
+                    'South',
+                    'West'
                 ]
             },
+            init: function (ev) {
+                console.log(`Called user init on ${this.name}`)
+
+                /*document.addEventListener('DOMContentLoaded', (ev) => {
+                    console.log('this.$refs: ', this.$refs)
+
+                    this.$refs.hiddenTitle.style.display = 'none';
+                })*/
+            },
+            mounted: function() {
+
+                // this.props.todos = await fetch('https://jsonplaceholder.typicode.com/todos')
+                //     .then(response => response.json())
+
+                xhttpGet('https://jsonplaceholder.typicode.com/todos', (response) => {
+                    this.props.todos = JSON.parse(response);
+
+                    console.log('xhttpGet response: ', response);
+                    console.log('xhttpGet this.props.todos: ', this.props.todos);
+
+                    this.props.triggerPropChanged('todos', this.props.todos)
+                })
+            },
             methods: {
+                youClicked: function (...params) {
+                    // ev.preventDefault();
+
+                    console.log('youClicked: ', params[0]);
+                },
+                addCity: function(ev) {
+                    ev.preventDefault();
+
+                    // alert("Maremmonen !")
+
+                    // window.for_debug = true;
+
+                    this.props.cities.push({
+                        id: 11,
+                        name: 'Dortmund'
+                    });
+
+                    this.props.triggerPropChanged({ prop: 'cities', value: this.props.cities })
+                },
                 changeTitle: function(ev) {
-                    console.log("comp", this.name);
-                    this.props.title = "Ciccia Al Pelo"
+                    console.log("comp: ", this.name);
+                    console.log('this.$refs.hiddenTitle: ', this.$refs.hiddenTitle);
+
+                    this.props.title = "Ciccia Al Pelo";
+                    this.$refs.hiddenTitle.style.display = 'none';
                 },
                 toggleDiv: function (ev) {
                     this.props.showDiv = !this.props.showDiv

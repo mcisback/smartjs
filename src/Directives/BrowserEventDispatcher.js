@@ -1,7 +1,8 @@
-import log from "../Log";
-import Helper from "../Helper";
-
 import BrowserEvent from "../BrowserEvent";
+import SaferEval from "../SaferEval";
+
+import Helper from "../Helper";
+import log from "../Log";
 
 export default class BrowserEventDispatcher {
     constructor({ event, methodName }, $scope, $el, preventDefault=false) {
@@ -16,7 +17,9 @@ export default class BrowserEventDispatcher {
             // throw new Error("BrowserEventDispatcher: Method, cannot find method: " + methodName);
             console.error(`BrowserEventDispatcher: Method, cannot find method: "${methodName}"\nTrying to run expr: (${methodName})`);
 
-            eventHandler = (new Function(` with(this){ return (${methodName}) }`).bind($scope.props));
+            eventHandler = SaferEval.build(methodName, $scope.props);
+
+            // eventHandler = (new Function(` with(this){ return (${methodName}) }`).bind($scope.props));
         } else {
 
             if (Helper.isArrowFn(method)) {

@@ -13,8 +13,103 @@ export default class Helper {
         return `${ho(view.getUint32(0), 8)}-${ho(view.getUint16(4), 4)}-${ho(view.getUint16(6), 4)}-${ho(view.getUint16(8), 4)}-${ho(view.getUint32(10), 8)}${ho(view.getUint16(14), 4)}`; /// Compile the canonical textual form from the array data
     }
 
+    static cloneArray(arr) {
+        return JSON.parse(JSON.stringify(arr));
+    }
+
+    static diffArray1(arr1, arr2) {
+        let diff = [];
+        let countDiff = 0;
+
+        // console.log("\n------------------- diffArray ------------");
+
+        if(arr1.length >= arr2.length) {
+            for(let i = 0; i < arr1.length; i++) {
+                if(i < arr2.length) {
+                    if (JSON.stringify(arr1[i]) !== JSON.stringify(arr2[i])) {
+                        diff.push(arr1[i]);
+                        countDiff++;
+                    }
+                } else {
+                    diff.push(arr1[i]);
+                }
+            }
+
+            // if(countDiff === arr2.length) {
+            //     console.log('They Both Different', arr1, arr2)
+            // }
+        } else {
+            // arr2.length > arr1.length
+            for(let i = 0; i < arr2.length; i++) {
+                if(i < arr1.length) {
+                    if (JSON.stringify(arr2[i]) !== JSON.stringify(arr1[i])) {
+                        diff.push(arr2[i]);
+                        countDiff++;
+                    }
+                } else {
+                    diff.push(arr2[i]);
+                }
+            }
+            // if(countDiff === arr1.length) {
+            //     console.log('They Both Different', arr1, arr2)
+            // }
+        }
+
+        // console.log('Array countDiff: ', countDiff);
+
+        return [diff, countDiff];
+    }
+
+    static diffArray(arr1, arr2) {
+        if(arr1.length === 0) {
+            return arr2;
+        }
+
+        if(arr2.length === 0) {
+            return arr1;
+        }
+
+        let [ diff, countDiff ] = this.diffArray1(arr1, arr2);
+
+        if(arr1.length >= arr2.length) {
+            if(countDiff === arr2.length) {
+                // console.log('They Both Different', arr1, arr2)
+                diff = [...diff, ...this.diffArray1(arr2, arr1)[0]]
+            }
+        } else {
+            if(countDiff === arr1.length) {
+                // console.log('They Both Different', arr1, arr2)
+                diff = [...diff, ...this.diffArray1(arr2, arr1)[0]]
+            }
+        }
+
+        return diff;
+    }
+
+    static getIfItIsJson(str) {
+        if (typeof str !== 'string') return false;
+
+        try {
+            const result = JSON.parse(str);
+            const type = Object.prototype.toString.call(result);
+            if (type === '[object Object]' || type === '[object Array]') {
+                return result;
+            }
+        } catch (err) {
+            return false;
+        }
+    }
+
     static isValidHTMLElement(element) {
         return document.createElement(element.tagName.toUpperCase()).toString() !== "[object HTMLUnknownElement]";
+    }
+
+    static create___sj(element) {
+        if(!element.___sj) {
+            element.___sj = {
+                id: Helper.uuid4()
+            }
+        }
     }
 
     static isArrowFn(f) {

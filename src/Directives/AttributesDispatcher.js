@@ -1,22 +1,25 @@
 import BrowserEventDispatcher from "./BrowserEventDispatcher";
 import FormSubmit from "./FormSubmit";
 import IfDirective from "./IfDirective";
-
-import log from "../Log";
+import RenderIfDirective from "./RenderIfDirective";
 import IfClassDirective from "./IfClassDirective";
 import BindModel from "./BindModel";
 import ForDirective from "./ForDirective";
+import RefDirective from "./RefDirective";
 
 import Helper from '../Helper';
+import log from "../Log";
 
 export default class AttributesDispatcher {
     static dispatch($node, $scope) {
         const $el = $node.el
 
-        if(!$el.___sj) {
-            $el.___sj = {
-                id: Helper.uuid4()
-            }
+        Helper.create___sj($el);
+
+        if($el.hasAttribute('sj:skip')) {
+            $el.removeAttribute('sj:skip');
+
+            return;
         }
 
         $node.attrs.forEach( attr => {
@@ -30,13 +33,22 @@ export default class AttributesDispatcher {
 
 
             if (!trigger || !triggerArgs) {
+                // debugger;
                 throw new Error("Trigger: args or trigger empty");
             }
 
             // Dispatch
             switch (trigger) {
+                case 'for': {
+                    new ForDirective({event: trigger, args: triggerArgs}, $scope, $el);
+                    break;
+                }
                 case 'if': {
                     new IfDirective({event: trigger, args: triggerArgs}, $scope, $el)
+                    break;
+                }
+                case 'render-if': {
+                    new RenderIfDirective({event: trigger, args: triggerArgs}, $scope, $el)
                     break;
                 }
                 case 'if-class': {
@@ -52,10 +64,11 @@ export default class AttributesDispatcher {
                     new FormSubmit({event: trigger, args: triggerArgs}, $scope, $el);
                     break;
                 }
-                case 'for': {
-                    new ForDirective({event: trigger, args: triggerArgs}, $scope, $el);
+                case 'ref': {
+                    new RefDirective({event: trigger, args: triggerArgs}, $scope, $el);
                     break;
                 }
+                case 'skip':
                 case 'cloak': {
                     console.error(`Directive ${trigger} Unimplemented`)
                     break;
